@@ -6,50 +6,54 @@ import (
 	"net/http"
 )
 
-type FrontendRequest struct {
-	Request string `json:"request"`
+type ChatRequest struct {
+	Prompt string `json:"prompt"`
 }
 
-type APIResponse struct {
+type ChatResponse struct {
 	Response string `json:"response"`
 }
 
-type APIInteract struct {
-	Model  string `json:"model"`
-	Query  string `json:"query"`
-	Stream bool   `json:"stream"`
-}
-
-func Chat(w http.ResponseWriter, r *http.Request) {
-	var query FrontendRequest
-	if err := json.NewDecoder(r.Body).Decode(&query); err != nil {
+func ChatHandler(w http.ResponseWriter, r *http.Request) {
+	var req ChatRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	response, err := generateResponse(query.Request)
-	json.NewEncoder(w).Encode(response)
+
+	response, err := generateResponse(req.Prompt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
+	res := ChatResponse{Response: response}
+	json.NewEncoder(w).Encode(res)
 }
 
-func generateResponse(query string) (string, error) {
-	var apiResponse APIResponse
+type ChatAPIRequest struct {
+	Prompt string `json:"prompt"`
+	Model  string `json:"model"`
+	Stream bool   `json:"stream"`
+}
 
-	apiRequest, err := json.Marshal(APIInteract{Model: "llama3", Query: query, Stream: false})
+func generateResponse(prompt string) (string, error) {
+	url := "http://ollama:11434/api/generate"
+	payload, err := json.Marshal(ChatAPIRequest{Prompt: prompt, Model: "llama3", Stream: false})
 	if err != nil {
 		return "res : ", err
 	}
 
-	response, err := http.Post("http://localhost:11434/api/generate", "application/json", bytes.NewBuffer(apiRequest))
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(payload))
 	if err != nil {
-		return "res: ", err
+		return "res : ", err
 	}
-	defer response.Body.Close()
+	defer resp.Body.Close()
 
-	json.NewDecoder(response.Body).Decode(&apiResponse)
-	return apiResponse.Response, nil
+	var chatResp ChatResponse
+    if err := json.NewDecoder(resp.Body).Decode(&chatResp); err != nil {
+        return "res : ", err
+    }
+
+    return chatResp.Response, nil
 }
-
-// website load -> write request -> post from frontend using axios -> then post to api ->

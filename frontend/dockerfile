@@ -6,10 +6,13 @@ ENV PATH /app/node_modules/.bin:$PATH
 
 COPY package.json ./
 COPY package-lock.json ./
-RUN npm ci && npm cache clean --force
+# RUN npm i react-redux @heroicons/react @reduxjs/toolkit
+RUN npm ci --silent
 
 COPY . .
 
-CMD ["npm", "start"]
+
 
 EXPOSE 3000
+
+CMD ["npm", "start"]

@@ -14,7 +14,7 @@ func main() {
 	r := mux.NewRouter()
 
 	r.Use(middleware.ChatLogger)
-	r.HandleFunc("/", handler.Chat)
+	r.HandleFunc("/", handler.ChatHandler)
 
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal("The server broke", err)
