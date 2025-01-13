@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - 3000:3000
+    volumes:
+      - ./frontend/src:/app/src/
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    stdin_open: true
+    tty: true
+
+  backend:
+    build: ./backend
+    ports:
+      - 8080:8080
+    volumes:
+      - ./backend:/app
+    environment:
+      - GO_ENV=development
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:0.1.32
+    networks:
+      - internal-net
+    volumes:
+      - ollama_models:/root/.ollama/models
+    restart: unless-stopped
+    ports:
+      - 11434:11434
+      
+networks:
+  internal-net:
+    driver: bridge
+
+volumes:
+  ollama_models: {}
